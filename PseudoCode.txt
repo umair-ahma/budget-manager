@@ -1,0 +1,98 @@
+# Pseudo Code: Ad Agency Budget Management System
+
+## Overview
+
+This system is designed to manage advertising budgets for multiple brands. Each brand has a daily and monthly budget and runs campaigns that can only be active within allowed time windows (dayparting). The system enforces budget limits, schedules resets, and applies dayparting rules.
+
+---
+
+## Entities
+
+### Brand
+
+* Attributes:
+
+  * name: string
+  * daily\_budget: number
+  * monthly\_budget: number
+  * daily\_spend: number (resets daily)
+  * monthly\_spend: number (resets monthly)
+
+### Campaign
+
+* Attributes:
+
+  * name: string
+  * brand\_id: reference to Brand
+  * is\_active: boolean
+  * start\_hour: integer (0-23)
+  * end\_hour: integer (0-23)
+
+---
+
+## Tasks and Logic
+
+### 1. Enforce Budget Limits
+
+```
+For each brand:
+    If brand.daily_spend >= brand.daily_budget OR brand.monthly_spend >= brand.monthly_budget:
+        Deactivate all campaigns for that brand
+    Else:
+        Mark all campaigns for that brand as eligible for reactivation (subject to dayparting)
+```
+
+### 2. Enforce Dayparting
+
+```
+current_hour = get current hour in Eastern Time (GMT-4)
+
+For each campaign:
+    If campaign is eligible (not over budget):
+        If start_hour <= current_hour < end_hour:
+            campaign.is_active = True
+        Else:
+            campaign.is_active = False
+```
+
+### 3. Daily Reset
+
+```
+At midnight each day (Eastern Time):
+    For each brand:
+        brand.daily_spend = 0
+
+    Trigger enforce_budget_limits task
+    Trigger enforce_dayparting task
+```
+
+### 4. Monthly Reset
+
+```
+On the 1st day of each month (Eastern Time):
+    For each brand:
+        brand.monthly_spend = 0
+
+    Trigger enforce_budget_limits task
+    Trigger enforce_dayparting task
+```
+
+---
+
+## Execution Order
+
+```
+1. enforce_budget_limits
+2. enforce_dayparting
+3. daily_reset -> enforce_budget_limits -> enforce_dayparting
+4. monthly_reset -> enforce_budget_limits -> enforce_dayparting
+```
+
+---
+
+## Notes
+
+* Timezone is Eastern Time (GMT-4)
+* Daily and monthly budgets are **independent**
+* Campaigns should never be active if either budget is exceeded
+* Dayparting is only checked after passing budget constraints
