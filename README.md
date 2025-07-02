@@ -1,0 +1,73 @@
+## Data Models
+- **Brand**: Daily/Monthly budgets and spend tracking.
+- **Campaign**: Linked to Brand. Controlled by budget constraints and dayparting.
+
+## Workflow
+- Tracks and updates spend.
+- Automatically pauses/resumes campaigns based on budgets.
+- Enforces dayparting schedules in Eastern Time.
+- Resets budgets daily/monthly.
+
+## Assumptions
+- Daily and monthly budgets are independent.
+- Timezone: Eastern Daylight Time (GMT-4).
+
+# Budget Manager Django Application Setup Guide
+
+# Step 1: Create and activate virtual environment
+# Create a new virtual environment to isolate project dependencies
+python -m venv venv
+
+# Set execution policy to allow script execution (Windows specific)
+# This may be needed because Windows may block the script execution by default
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
+# Activate the virtual environment
+.\venv\Scripts\Activate
+
+# Step 2: Install required packages
+# Install all necessary dependencies for the Django project with Celery integration
+# - django: Web framework
+# - celery: Distributed task queue
+# - django-celery-beat: Database-backed periodic tasks
+# - django-celery-results: Store task results in Django database
+# - mypy: Static type checker for Python
+# - django-stubs: Type stubs for Django to work with mypy
+pip install django celery django-celery-beat django-celery-results mypy django-stubs
+
+# Generate requirements.txt file with all installed packages and their versions
+pip freeze > requirements.txt
+
+# Step 3: Initialize Django project and app
+# Create the main Django project with 'config' as the project name
+django-admin startproject config .
+
+# Create the 'ads' Django application within the project
+python manage.py startapp ads
+
+# Step 4: Database setup
+# Note: Ensure all models and configuration are properly set up before running this
+# Apply database migrations to create necessary tables
+python manage.py migrate
+
+# Step 5: Run the development server
+# Start the Django development server (typically runs on http://127.0.0.1:8000/)
+python manage.py runserver
+
+# Step 6: Run Celery components for background task processing
+# Start Celery worker to process background tasks
+celery -A config worker -l info
+
+# Alternative Celery worker command for Windows (using solo pool)
+# Use this if you encounter issues with the default worker on Windows
+celery -A config worker --pool=solo --loglevel=info
+
+# Start Celery Beat scheduler for periodic tasks
+celery -A config beat --loglevel=info
+
+# Alternative Celery Beat command with shorter log level flag
+celery -A config beat -l info
+
+# Step 7: Install additional timezone support
+# Install pytz for better timezone handling in Django/Celery
+pip install pytz
